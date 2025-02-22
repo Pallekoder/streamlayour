@@ -482,6 +482,133 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                 });
               `;
               iframeDoc.head.appendChild(script);
+
+              // New script for finding and clicking fullscreen button
+              script.textContent = `
+                function findAndClickFullscreenButton() {
+                  // Common fullscreen button selectors
+                  const buttonSelectors = [
+                    // Direct fullscreen button selectors
+                    'button.fullscreen',
+                    'button[class*="fullscreen"]',
+                    'div[class*="fullscreen"]',
+                    '[data-test-id*="fullscreen"]',
+                    '[class*="fullscreen-button"]',
+                    '[id*="fullscreen"]',
+                    // Generic button selectors that might be fullscreen
+                    'button:has(svg)',
+                    'button.icon-button',
+                    '[role="button"]',
+                    // Specific casino selectors
+                    '.casino-controls button',
+                    '.game-controls button',
+                    '.controls-container button'
+                  ];
+
+                  // First try the main document
+                  for (const selector of buttonSelectors) {
+                    const buttons = document.querySelectorAll(selector);
+                    for (const button of buttons) {
+                      // Check if this looks like a fullscreen button
+                      const buttonText = button.textContent?.toLowerCase() || '';
+                      const buttonHTML = button.innerHTML.toLowerCase();
+                      const isFullscreenButton = 
+                        buttonText.includes('full') || 
+                        buttonText.includes('screen') ||
+                        buttonHTML.includes('full') ||
+                        buttonHTML.includes('screen') ||
+                        buttonHTML.includes('maximize') ||
+                        button.className.toLowerCase().includes('full') ||
+                        button.className.toLowerCase().includes('screen');
+
+                      if (isFullscreenButton) {
+                        try {
+                          button.click();
+                          console.log('Clicked fullscreen button:', button);
+                          return true;
+                        } catch (e) {
+                          console.warn('Failed to click button:', e);
+                        }
+                      }
+                    }
+                  }
+
+                  // Try to find and access game iframes
+                  const iframes = document.querySelectorAll('iframe');
+                  for (const iframe of iframes) {
+                    try {
+                      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                      if (iframeDoc) {
+                        for (const selector of buttonSelectors) {
+                          const buttons = iframeDoc.querySelectorAll(selector);
+                          for (const button of buttons) {
+                            const buttonText = button.textContent?.toLowerCase() || '';
+                            const buttonHTML = button.innerHTML.toLowerCase();
+                            const isFullscreenButton = 
+                              buttonText.includes('full') || 
+                              buttonText.includes('screen') ||
+                              buttonHTML.includes('full') ||
+                              buttonHTML.includes('screen') ||
+                              buttonHTML.includes('maximize') ||
+                              button.className.toLowerCase().includes('full') ||
+                              button.className.toLowerCase().includes('screen');
+
+                            if (isFullscreenButton) {
+                              try {
+                                button.click();
+                                console.log('Clicked fullscreen button in iframe:', button);
+                                return true;
+                              } catch (e) {
+                                console.warn('Failed to click button in iframe:', e);
+                              }
+                            }
+                          }
+                        }
+                      }
+                    } catch (e) {
+                      console.warn('Failed to access iframe:', e);
+                    }
+                  }
+
+                  return false;
+                }
+
+                // Try to click fullscreen button repeatedly
+                function attemptFullscreen() {
+                  if (!findAndClickFullscreenButton()) {
+                    // If button not found, try again after a delay
+                    setTimeout(attemptFullscreen, 1000);
+                  }
+                }
+
+                // Start attempting to find and click fullscreen button
+                attemptFullscreen();
+
+                // Also try when any content changes
+                const observer = new MutationObserver(() => {
+                  findAndClickFullscreenButton();
+                });
+
+                observer.observe(document.body, {
+                  childList: true,
+                  subtree: true,
+                  attributes: true,
+                  characterData: true
+                });
+
+                // Listen for messages from parent
+                window.addEventListener('message', function(event) {
+                  if (event.data === 'clickFullscreen') {
+                    findAndClickFullscreenButton();
+                  }
+                });
+              `;
+              iframeDoc.head.appendChild(script);
+
+              // Add minimal CSS to ensure game is visible
+              const gameStyle = iframeDoc.createElement('style');
+              gameStyle.textContent = '/* Ensure game container is visible */ #gameHolder, [id*="game-container"], [class*="game-container"], [class*="casino-game"] { min-width: 100vw !important; min-height: 100vh !important; width: 100vw !important; height: 100vh !important; position: fixed !important; top: 0 !important; left: 0 !important; margin: 0 !important; padding: 0 !important; z-index: 2147483647 !important; } /* Ensure game iframe takes full space */ iframe { width: 100% !important; height: 100% !important; position: fixed !important; top: 0 !important; left: 0 !important; margin: 0 !important; padding: 0 !important; border: none !important; }';
+              iframeDoc.head.appendChild(gameStyle);
             }
           } catch (e) {
             console.warn('Could not modify iframe content:', e);
@@ -511,16 +638,14 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
           onClick={() => {
             const iframe = iframeRef.current;
             if (iframe && iframe.contentWindow) {
-              iframe.contentWindow.postMessage('openGameInNewWindow', '*');
+              iframe.contentWindow.postMessage('clickFullscreen', '*');
             }
           }}
           className="rounded-md bg-black/50 p-1 text-white opacity-50 hover:opacity-100"
-          title="Open in New Window"
+          title="Fullscreen"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-            <polyline points="15 3 21 3 21 9"></polyline>
-            <line x1="10" y1="14" x2="21" y2="3"></line>
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
           </svg>
         </button>
         <button
