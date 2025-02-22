@@ -38,7 +38,6 @@ interface LayoutItem {
 
 export default function LayoutsPage() {
   const [layout, setLayout] = React.useState<LayoutItem[]>([]);
-  const [viewWindow, setViewWindow] = React.useState<Window | null>(null);
   const [selectedType, setSelectedType] = React.useState<LayoutItem["type"]>("browser");
   const [insertUrl, setInsertUrl] = React.useState("");
 
@@ -101,12 +100,6 @@ export default function LayoutsPage() {
       });
     }
     localStorage.setItem("layoutPresets", JSON.stringify(presets));
-  };
-
-  const openViewMode = () => {
-    saveLayout();
-    const newWindow = window.open("/view", "_blank", "width=1920,height=1080");
-    setViewWindow(newWindow);
   };
 
   return (
