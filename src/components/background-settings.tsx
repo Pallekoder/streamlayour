@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { BackgroundSettings, BackgroundType } from "@/lib/types";
+import type { BackgroundSettings as BackgroundSettingsType, BackgroundType } from "@/lib/types";
 
 interface BackgroundSettingsProps {
-  settings: BackgroundSettings;
-  onChange: (settings: BackgroundSettings) => void;
+  settings: BackgroundSettingsType;
+  onChange: (settings: BackgroundSettingsType) => void;
 }
 
 export function BackgroundSettings({ settings, onChange }: BackgroundSettingsProps) {
