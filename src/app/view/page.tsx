@@ -185,11 +185,6 @@ export default function ViewPage() {
                 {item.type === "browser" && item.url && (
                   <BrowserWindow 
                     url={item.url} 
-                    onClose={() => {
-                      const newLayout = layout.filter(l => l.i !== item.i);
-                      setLayout(newLayout);
-                      localStorage.setItem("currentLayout", JSON.stringify(newLayout));
-                    }}
                   />
                 )}
                 {item.type === "chat" && item.url && (
