@@ -31,27 +31,6 @@ interface WebcamDevice {
   label: string;
 }
 
-const STREAM_PLATFORMS = [
-  { 
-    id: "twitch", 
-    name: "Twitch", 
-    url: "https://www.twitch.tv/embed/USERNAME/chat?parent=" + window.location.hostname,
-    authUrl: "https://www.twitch.tv/login"
-  },
-  { 
-    id: "youtube", 
-    name: "YouTube", 
-    url: "https://www.youtube.com/live_chat?v=VIDEO_ID&embed_domain=localhost",
-    authUrl: "https://accounts.google.com"
-  },
-  { 
-    id: "kick", 
-    name: "Kick", 
-    url: "https://kick.com/USERNAME/chatroom",
-    authUrl: "https://kick.com/login"
-  }
-];
-
 interface SavedLayout {
   id: string;
   name: string;
@@ -60,6 +39,27 @@ interface SavedLayout {
 }
 
 export default function SettingsPage() {
+  const STREAM_PLATFORMS = React.useMemo(() => [
+    { 
+      id: "twitch", 
+      name: "Twitch", 
+      url: "https://www.twitch.tv/embed/USERNAME/chat?parent=" + (typeof window !== 'undefined' ? window.location.hostname : ''),
+      authUrl: "https://www.twitch.tv/login"
+    },
+    { 
+      id: "youtube", 
+      name: "YouTube", 
+      url: "https://www.youtube.com/live_chat?v=VIDEO_ID&embed_domain=" + (typeof window !== 'undefined' ? window.location.hostname : ''),
+      authUrl: "https://accounts.google.com"
+    },
+    { 
+      id: "kick", 
+      name: "Kick", 
+      url: "https://kick.com/USERNAME/chatroom",
+      authUrl: "https://kick.com/login"
+    }
+  ], []);
+
   const [layout, setLayout] = React.useState<LayoutItem[]>([]);
   const [selectedType, setSelectedType] = React.useState<LayoutItem["type"]>("browser");
   const [selectedItem, setSelectedItem] = React.useState<LayoutItem | null>(null);
