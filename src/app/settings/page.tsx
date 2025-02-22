@@ -619,6 +619,7 @@ export default function SettingsPage() {
             useCSSTransforms
             verticalCompact={false}
             maxRows={Math.floor(EDITOR_HEIGHT / SCALED_ROW_HEIGHT)}
+            style={{ height: EDITOR_HEIGHT }}
           >
             {layout.map((item) => (
               <div 
