@@ -8,13 +8,9 @@ interface BrowserWindowProps {
   className?: string;
 }
 
-// Define interface for HTML Object Element with contentWindow
-interface HTMLObjectElementWithWindow extends HTMLObjectElement {
-  contentWindow: Window | null;
-}
-
 export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -32,75 +28,145 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
     }
   }, [url]);
 
+  const injectFullscreenStyles = React.useCallback(() => {
+    if (!iframeRef.current?.contentWindow) return;
+
+    try {
+      const iframe = iframeRef.current;
+      const win = iframe.contentWindow;
+      if (!win) return;
+      const doc = win.document;
+
+      // Create and inject the fullscreen styles
+      const style = doc.createElement('style');
+      style.textContent = `
+        html, body {
+          width: 100vw !important;
+          height: 100vh !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+        }
+
+        /* Target all possible game containers */
+        #gameHolder,
+        #game-container,
+        .game-container,
+        [class*="game-container"],
+        [class*="casino-game"],
+        [class*="slot-container"],
+        [id*="game-container"],
+        [class*="game-holder"],
+        [class*="frameHolder"],
+        [class*="game_holder"],
+        [class*="game-frame"],
+        [class*="game_frame"],
+        [class*="game-canvas"],
+        [id*="game-canvas"],
+        canvas,
+        iframe {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          transform: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          border: none !important;
+          z-index: 2147483647 !important;
+        }
+
+        /* Hide non-game elements */
+        body > *:not(#gameHolder):not(#game-container):not([class*="game-container"]):not([class*="casino-game"]):not([class*="slot-container"]):not([class*="game-holder"]):not([class*="frameHolder"]):not([class*="game_holder"]):not([class*="game-frame"]):not([class*="game_frame"]):not([class*="game-canvas"]):not([id*="game-canvas"]):not(canvas):not(iframe):not(script):not(style) {
+          display: none !important;
+        }
+      `;
+      doc.head.appendChild(style);
+
+      // Try to find and click any fullscreen buttons
+      const fullscreenButtonSelectors = [
+        'button[class*="fullscreen"]',
+        'button[id*="fullscreen"]',
+        'div[class*="fullscreen"]',
+        'div[id*="fullscreen"]',
+        '[class*="maximize"]',
+        '[id*="maximize"]',
+        'button:has(svg[class*="fullscreen"])',
+        'button:has(img[alt*="fullscreen"])',
+      ];
+
+      const findAndClickFullscreenButton = () => {
+        for (const selector of fullscreenButtonSelectors) {
+          const button = doc.querySelector(selector);
+          if (button && button instanceof HTMLElement) {
+            button.click();
+            return true;
+          }
+        }
+        return false;
+      };
+
+      // Try multiple times to find and click the fullscreen button
+      const retryInterval = setInterval(() => {
+        if (findAndClickFullscreenButton()) {
+          clearInterval(retryInterval);
+        }
+      }, 1000);
+
+      // Clear interval after 10 seconds
+      setTimeout(() => clearInterval(retryInterval), 10000);
+
+      // Add message listener for fullscreen requests
+      win.addEventListener('message', (event) => {
+        if (event.data === 'requestFullscreen') {
+          iframe.requestFullscreen?.();
+        }
+      });
+
+    } catch (e) {
+      console.warn('Could not inject fullscreen styles:', e);
+    }
+  }, []);
+
   const handleRefresh = React.useCallback(() => {
     setIsLoading(true);
     setError(null);
-    
-    // Force reload by recreating the object element
-    if (containerRef.current) {
-      containerRef.current.innerHTML = '';
-      const object = document.createElement('object') as HTMLObjectElementWithWindow;
-      object.data = formattedUrl;
-      object.type = 'text/html';
-      object.style.cssText = 'width: 100%; height: 100%; border: none;';
-      
-      // Add event listeners
-      object.onload = () => {
+
+    if (iframeRef.current) {
+      // Reset the iframe
+      iframeRef.current.src = 'about:blank';
+      iframeRef.current.src = formattedUrl;
+
+      // Add load event listener
+      const handleLoad = () => {
         setIsLoading(false);
-        try {
-          // Try to access the object's content window
-          const contentWindow = object.contentWindow;
-          if (contentWindow) {
-            // Apply fullscreen styles
-            const style = document.createElement('style');
-            style.textContent = `
-              body, html {
-                width: 100% !important;
-                height: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: hidden !important;
-              }
-              #gameHolder, #game-container, .game-container, [class*="game-container"] {
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-                height: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-              }
-            `;
-            contentWindow.document.head.appendChild(style);
-          }
-        } catch (e) {
-          console.warn('Could not modify content:', e);
-        }
-      };
-      object.onerror = () => {
-        setIsLoading(false);
-        setError('Failed to load content');
+        injectFullscreenStyles();
       };
 
-      // Add fallback content
-      const embed = document.createElement('embed');
-      embed.src = formattedUrl;
-      embed.type = 'text/html';
-      embed.style.cssText = 'width: 100%; height: 100%; border: none;';
-      object.appendChild(embed);
-
-      containerRef.current.appendChild(object);
+      iframeRef.current.addEventListener('load', handleLoad);
+      return () => iframeRef.current?.removeEventListener('load', handleLoad);
     }
-  }, [formattedUrl]);
+  }, [formattedUrl, injectFullscreenStyles]);
 
   React.useEffect(() => {
     handleRefresh();
   }, [handleRefresh]);
 
   const handleFullscreen = () => {
-    if (containerRef.current) {
-      if (containerRef.current.requestFullscreen) {
-        containerRef.current.requestFullscreen();
+    if (iframeRef.current) {
+      // Try multiple approaches to trigger fullscreen
+      try {
+        // 1. Try to make the iframe itself fullscreen
+        iframeRef.current.requestFullscreen?.();
+
+        // 2. Send message to iframe content
+        iframeRef.current.contentWindow?.postMessage('requestFullscreen', '*');
+
+        // 3. Try to inject and click fullscreen button
+        injectFullscreenStyles();
+      } catch (e) {
+        console.warn('Fullscreen request failed:', e);
       }
     }
   };
@@ -141,13 +207,23 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
           </button>
         </div>
       ) : (
-        <div 
-          ref={containerRef} 
-          className="h-full w-full flex-1"
+        <iframe
+          ref={iframeRef}
+          src={formattedUrl}
+          className="h-full w-full flex-1 border-none"
           style={{
-            position: 'relative',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            margin: 0,
+            padding: 0,
             overflow: 'hidden'
           }}
+          sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-presentation allow-downloads allow-popups-to-escape-sandbox allow-top-navigation"
+          allow="fullscreen; autoplay; camera; microphone; display-capture"
         />
       )}
     </div>
