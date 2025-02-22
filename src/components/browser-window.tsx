@@ -126,16 +126,118 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                             zIndex: '2147483647'
                           });
 
-                          // Try to access and style the iframe's content
+                          // Try multiple approaches to trigger fullscreen
+                          
+                          // 1. Send postMessage to request fullscreen
+                          try {
+                            gameIframe.contentWindow.postMessage({ action: 'requestFullscreen' }, '*');
+                            gameIframe.contentWindow.postMessage({ type: 'requestFullscreen' }, '*');
+                            gameIframe.contentWindow.postMessage('requestFullscreen', '*');
+                          } catch (e) {
+                            console.warn('Could not send postMessage:', e);
+                          }
+
+                          // 2. Try to access and modify the iframe's content
                           try {
                             const iframeDoc = gameIframe.contentDocument || gameIframe.contentWindow?.document;
                             if (iframeDoc) {
+                              // Add fullscreen styles
                               const style = iframeDoc.createElement('style');
                               style.textContent = 'body, html { width: 100vw !important; height: 100vh !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; } * { margin: 0 !important; padding: 0 !important; }';
                               iframeDoc.head.appendChild(style);
+
+                              // Try to find and click fullscreen buttons
+                              const fullscreenSelectors = [
+                                '[data-test-id="game-fullscreen-button"]',
+                                '.fullscreen-button',
+                                '[class*="fullscreen"]',
+                                '[id*="fullscreen"]',
+                                'button[title*="fullscreen" i]',
+                                'button[aria-label*="fullscreen" i]',
+                                '[class*="maximize"]',
+                                '[id*="maximize"]'
+                              ];
+
+                              // Function to click fullscreen buttons
+                              function clickFullscreenButtons() {
+                                for (const selector of fullscreenSelectors) {
+                                  const buttons = iframeDoc.querySelectorAll(selector);
+                                  buttons.forEach(button => {
+                                    try {
+                                      button.click();
+                                      console.log('Clicked fullscreen button:', selector);
+                                    } catch (e) {
+                                      console.warn('Could not click button:', selector, e);
+                                    }
+                                  });
+                                }
+                              }
+
+                              // Click buttons immediately and after a delay
+                              clickFullscreenButtons();
+                              setTimeout(clickFullscreenButtons, 1000);
+                              setTimeout(clickFullscreenButtons, 2000);
+
+                              // Add event listener for fullscreen messages
+                              window.addEventListener('message', (event) => {
+                                if (event.data && typeof event.data === 'object') {
+                                  // Log all messages for debugging
+                                  console.log('Received message:', event.data);
+                                  
+                                  // Check if the message indicates the game is ready
+                                  if (event.data.type === 'gameReady' || 
+                                      event.data.action === 'gameReady' || 
+                                      event.data.status === 'ready') {
+                                    // Try clicking fullscreen buttons again
+                                    clickFullscreenButtons();
+                                    
+                                    // Send fullscreen request
+                                    event.source.postMessage({ action: 'requestFullscreen' }, '*');
+                                  }
+                                }
+                              });
+
+                              // Inject script to handle fullscreen
+                              const fullscreenScript = iframeDoc.createElement('script');
+                              fullscreenScript.textContent = \`
+                                // Function to request fullscreen
+                                function requestFullscreen(element) {
+                                  if (element.requestFullscreen) {
+                                    element.requestFullscreen();
+                                  } else if (element.webkitRequestFullscreen) {
+                                    element.webkitRequestFullscreen();
+                                  } else if (element.mozRequestFullScreen) {
+                                    element.mozRequestFullScreen();
+                                  } else if (element.msRequestFullscreen) {
+                                    element.msRequestFullscreen();
+                                  }
+                                }
+
+                                // Listen for fullscreen messages
+                                window.addEventListener('message', function(event) {
+                                  if (event.data && 
+                                      (event.data.action === 'requestFullscreen' || 
+                                       event.data.type === 'requestFullscreen' || 
+                                       event.data === 'requestFullscreen')) {
+                                    // Try to make the game container fullscreen
+                                    const gameContainer = document.querySelector('#game-container') || 
+                                                        document.querySelector('.game-container') ||
+                                                        document.querySelector('[class*="game-container"]');
+                                    if (gameContainer) {
+                                      requestFullscreen(gameContainer);
+                                    } else {
+                                      requestFullscreen(document.documentElement);
+                                    }
+                                  }
+                                });
+
+                                // Send ready message
+                                window.parent.postMessage({ type: 'gameReady' }, '*');
+                              \`;
+                              iframeDoc.body.appendChild(fullscreenScript);
                             }
                           } catch (e) {
-                            console.warn('Could not style iframe content:', e);
+                            console.warn('Could not modify iframe content:', e);
                           }
                         }
                       }
@@ -203,9 +305,11 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                   }
                 }
 
-                // Run immediately and on any window resize
+                // Run immediately and after delays to catch dynamic content
                 resizeGame();
-                window.addEventListener('resize', resizeGame);
+                setTimeout(resizeGame, 1000);
+                setTimeout(resizeGame, 2000);
+                setTimeout(resizeGame, 5000);
 
                 // Rerun on dynamic content changes
                 const observer = new MutationObserver(() => {
@@ -216,7 +320,7 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                   subtree: true
                 });
 
-                // Intercept fullscreen requests
+                // Intercept fullscreen changes
                 document.addEventListener('fullscreenchange', resizeGame);
                 document.addEventListener('webkitfullscreenchange', resizeGame);
                 document.addEventListener('mozfullscreenchange', resizeGame);
