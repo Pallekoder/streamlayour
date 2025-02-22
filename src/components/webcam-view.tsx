@@ -12,6 +12,8 @@ export function WebcamView({ deviceId, className = "" }: WebcamViewProps) {
   const [error, setError] = React.useState<string>("");
 
   React.useEffect(() => {
+    let currentVideoElement = videoRef.current;
+
     async function setupWebcam() {
       try {
         const constraints: MediaStreamConstraints = {
@@ -20,10 +22,9 @@ export function WebcamView({ deviceId, className = "" }: WebcamViewProps) {
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        const videoElement = videoRef.current;
         
-        if (videoElement) {
-          videoElement.srcObject = stream;
+        if (currentVideoElement) {
+          currentVideoElement.srcObject = stream;
         }
       } catch (err) {
         console.error('Error accessing webcam:', err);
@@ -35,9 +36,8 @@ export function WebcamView({ deviceId, className = "" }: WebcamViewProps) {
 
     // Cleanup function to stop the webcam when component unmounts
     return () => {
-      const videoElement = videoRef.current;
-      if (videoElement?.srcObject) {
-        const stream = videoElement.srcObject as MediaStream;
+      if (currentVideoElement?.srcObject) {
+        const stream = currentVideoElement.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
       }
     };

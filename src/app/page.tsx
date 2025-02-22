@@ -1,9 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { ViewWindowButton } from "@/components/view-window-button";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2 } from "lucide-react";
 import { Header } from "@/components/header";
 import type { LayoutItem } from "@/lib/types";
 
@@ -24,7 +22,6 @@ export default function LayoutPage() {
   const [currentLayout, setCurrentLayout] = React.useState<LayoutItem[]>([]);
   const [casinoUrl, setCasinoUrl] = React.useState("");
   const [webcamUrl, setWebcamUrl] = React.useState("");
-  const [isMuted, setIsMuted] = React.useState(false);
   const [extraScreenUrl, setExtraScreenUrl] = React.useState("");
   const [viewWindow, setViewWindow] = React.useState<Window | null>(null);
   const [volume, setVolume] = React.useState(100);
@@ -311,7 +308,6 @@ export default function LayoutPage() {
                     <div className="flex gap-2">
                       <button 
                         onClick={() => {
-                          setIsMuted(true);
                           refreshViewWindow();
                         }}
                         className="flex-1 rounded-md bg-[#ff6b6b] px-4 py-2 text-white"
@@ -320,7 +316,6 @@ export default function LayoutPage() {
                       </button>
                       <button 
                         onClick={() => {
-                          setIsMuted(false);
                           refreshViewWindow();
                         }}
                         className="flex-1 rounded-md bg-[#43b581] px-4 py-2 text-white"

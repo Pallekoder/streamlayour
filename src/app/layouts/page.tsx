@@ -39,7 +39,6 @@ interface LayoutItem {
 export default function LayoutsPage() {
   const [layout, setLayout] = React.useState<LayoutItem[]>([]);
   const [viewWindow, setViewWindow] = React.useState<Window | null>(null);
-  const [isSnapping, setIsSnapping] = React.useState(true);
   const [selectedType, setSelectedType] = React.useState<LayoutItem["type"]>("browser");
   const [insertUrl, setInsertUrl] = React.useState("");
 
