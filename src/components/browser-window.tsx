@@ -30,19 +30,36 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
 
   // Function to create a preview of the game
   const createPreview = React.useCallback(() => {
-    if (!previewRef.current) return;
+    if (!previewRef.current) {
+      setError('Preview container not found');
+      return;
+    }
     
-    previewRef.current.innerHTML = '';
-    const iframe = document.createElement('iframe');
-    iframe.src = formattedUrl;
-    iframe.style.cssText = `
-      width: 100%;
-      height: 100%;
-      border: none;
-      pointer-events: none; // Prevent interaction with preview
-    `;
-    previewRef.current.appendChild(iframe);
-    setIsLoading(false);
+    try {
+      setError(null);
+      setIsLoading(true);
+      previewRef.current.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.src = formattedUrl;
+      iframe.style.cssText = `
+        width: 100%;
+        height: 100%;
+        border: none;
+        pointer-events: none; // Prevent interaction with preview
+      `;
+      iframe.onerror = () => {
+        setError('Failed to load game preview');
+        setIsLoading(false);
+      };
+      iframe.onload = () => {
+        setIsLoading(false);
+      };
+      previewRef.current.appendChild(iframe);
+    } catch (e) {
+      console.error('Preview creation error:', e);
+      setError('Failed to create game preview');
+      setIsLoading(false);
+    }
   }, [formattedUrl]);
 
   React.useEffect(() => {
@@ -51,31 +68,37 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
 
   // Function to launch the game in a new window
   const launchGame = () => {
-    // Close existing window if any
-    if (gameWindow && !gameWindow.closed) {
-      gameWindow.close();
-    }
+    try {
+      setError(null);
+      
+      // Close existing window if any
+      if (gameWindow && !gameWindow.closed) {
+        gameWindow.close();
+      }
 
-    // Get the screen dimensions
-    const screenWidth = window.screen.width;
-    const screenHeight = window.screen.height;
+      // Get the screen dimensions
+      const screenWidth = window.screen.width;
+      const screenHeight = window.screen.height;
 
-    // Calculate the window size (slightly smaller than screen to account for borders)
-    const windowWidth = screenWidth - 10;
-    const windowHeight = screenHeight - 40;
+      // Calculate the window size (slightly smaller than screen to account for borders)
+      const windowWidth = screenWidth - 10;
+      const windowHeight = screenHeight - 40;
 
-    // Calculate position to center the window
-    const left = 0;
-    const top = 0;
+      // Calculate position to center the window
+      const left = 0;
+      const top = 0;
 
-    // Create a new window with specific features
-    const newWindow = window.open(
-      formattedUrl,
-      'gameWindow',
-      `width=${windowWidth},height=${windowHeight},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=yes`
-    );
+      // Create a new window with specific features
+      const newWindow = window.open(
+        formattedUrl,
+        'gameWindow',
+        `width=${windowWidth},height=${windowHeight},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=yes`
+      );
 
-    if (newWindow) {
+      if (!newWindow) {
+        throw new Error('Failed to open game window. Please check if pop-ups are blocked.');
+      }
+
       setGameWindow(newWindow);
       
       // Add styles to the new window when it loads
@@ -127,6 +150,9 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
 
       // Focus the window
       newWindow.focus();
+    } catch (e) {
+      console.error('Game launch error:', e);
+      setError(e instanceof Error ? e.message : 'Failed to launch game');
     }
   };
 
