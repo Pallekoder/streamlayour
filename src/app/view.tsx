@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import GridLayout from "react-grid-layout";
-import { GRID_COLS, GRID_ROW_HEIGHT, SCALE_FACTOR } from "@/lib/constants";
+import { GRID_COLS, GRID_ROW_HEIGHT } from "@/lib/constants";
 import { Background } from "@/components/background";
 import { BrowserWindow } from "@/components/browser-window";
 import { X } from "lucide-react";
@@ -17,10 +17,13 @@ interface LayoutItem {
   h: number;
   type: "browser" | "chat" | "camera" | "ad";
   url?: string;
+  deviceId?: string;
   minW?: number;
   minH?: number;
   maxW?: number;
   maxH?: number;
+  isVisible?: boolean;
+  zIndex?: number;
 }
 
 export default function ViewPage() {
@@ -32,11 +35,40 @@ export default function ViewPage() {
   });
 
   React.useEffect(() => {
-    const savedLayout = localStorage.getItem("currentLayout");
-    if (savedLayout) {
-      setLayout(JSON.parse(savedLayout));
-    }
+    // Load layout and URLs from localStorage
+    const loadLayout = () => {
+      const savedLayout = localStorage.getItem("currentLayout");
+      if (savedLayout) {
+        const parsedLayout = JSON.parse(savedLayout);
+        // Update URLs for each type
+        const updatedLayout = parsedLayout.map((item: LayoutItem) => {
+          if (item.type === "browser") {
+            const url = localStorage.getItem("casinoUrl");
+            if (url) {
+              return { ...item, url };
+            }
+          }
+          if (item.type === "chat") {
+            // Keep the original URL if it exists
+            if (item.url) {
+              return item;
+            }
+            // Default to Twitch chat if no URL
+            return { ...item, url: "https://www.twitch.tv/popout/chat" };
+          }
+          if (item.type === "camera") {
+            const deviceId = localStorage.getItem("webcamUrl");
+            return { ...item, deviceId };
+          }
+          return item;
+        });
+        setLayout(updatedLayout);
+      }
+    };
 
+    loadLayout();
+
+    // Handle window resize
     const handleResize = () => {
       setWindowSize({
         width: window.innerWidth,
@@ -44,8 +76,20 @@ export default function ViewPage() {
       });
     };
 
+    // Listen for storage changes to update layout in real-time
+    const handleStorageChange = (e: StorageEvent) => {
+      if (["currentLayout", "casinoUrl", "webcamUrl"].includes(e.key || "")) {
+        loadLayout();
+      }
+    };
+
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   const handleFullscreen = () => {
@@ -68,9 +112,6 @@ export default function ViewPage() {
       setLayout(JSON.parse(savedLayout));
     }
   };
-
-  // Scale up the row height from editor size to full size
-  const fullSizeRowHeight = GRID_ROW_HEIGHT / SCALE_FACTOR;
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -101,7 +142,7 @@ export default function ViewPage() {
         className="min-h-screen"
         layout={layout}
         cols={GRID_COLS}
-        rowHeight={fullSizeRowHeight}
+        rowHeight={GRID_ROW_HEIGHT}
         width={windowSize.width}
         isDraggable={false}
         isResizable={false}
@@ -112,14 +153,7 @@ export default function ViewPage() {
         {layout.map((item) => (
           <div key={item.i} className="overflow-hidden rounded-lg border border-border bg-card shadow-lg">
             {item.type === "browser" && item.url && (
-              <BrowserWindow 
-                url={item.url} 
-                onClose={() => {
-                  const newLayout = layout.filter(l => l.i !== item.i);
-                  setLayout(newLayout);
-                  localStorage.setItem("currentLayout", JSON.stringify(newLayout));
-                }}
-              />
+              <BrowserWindow url={item.url} />
             )}
             {item.type === "chat" && item.url && (
               <iframe
