@@ -6,10 +6,9 @@ import { X } from "lucide-react";
 interface BrowserWindowProps {
   url: string;
   className?: string;
-  onClose?: () => void;
 }
 
-export function BrowserWindow({ url, className = "", onClose }: BrowserWindowProps) {
+export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
