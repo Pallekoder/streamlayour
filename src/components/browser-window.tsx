@@ -12,6 +12,7 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [gameWindow, setGameWindow] = React.useState<Window | null>(null);
 
   const handleClose = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -39,167 +40,135 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
     }
   }, [url]);
 
-  const handleLoad = () => {
-    setIsLoading(false);
-    setError(null);
+  const openGameWindow = () => {
+    // Close existing window if any
+    if (gameWindow && !gameWindow.closed) {
+      gameWindow.close();
+    }
 
-    try {
-      const iframe = iframeRef.current;
-      if (iframe) {
-        // Wait for iframe to be ready
-        setTimeout(() => {
-          try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-            if (iframeDoc) {
-              // Add styles to force game container to be fullscreen
-              const style = iframeDoc.createElement('style');
-              style.textContent = `
-                body, html {
-                  width: 100% !important;
-                  height: 100% !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  overflow: hidden !important;
-                }
-                
-                /* Target all possible game containers */
-                #gameHolder,
-                #game-container,
-                .game-container,
-                [class*="game-container"],
-                [class*="casino-game"],
-                [class*="slot-container"],
-                [id*="game-container"],
-                [class*="game-holder"],
-                [class*="frameHolder"],
-                [class*="game_holder"],
-                [class*="game-frame"],
-                [class*="game_frame"] {
-                  position: fixed !important;
-                  top: 0 !important;
-                  left: 0 !important;
-                  width: 100% !important;
-                  height: 100% !important;
-                  transform: none !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  border: none !important;
-                  z-index: 2147483647 !important;
-                }
+    // Calculate the screen dimensions
+    const width = window.screen.width;
+    const height = window.screen.height;
 
-                /* Target game iframes and canvases */
-                iframe,
-                canvas,
-                [class*="game-canvas"],
-                [id*="game-canvas"] {
-                  width: 100% !important;
-                  height: 100% !important;
-                  position: fixed !important;
-                  top: 0 !important;
-                  left: 0 !important;
-                  transform: none !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  border: none !important;
-                  z-index: 2147483647 !important;
-                }
+    // Open new window with specific features
+    const newWindow = window.open(formattedUrl, 'gameWindow', 
+      `width=${width},height=${height},left=0,top=0,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no`
+    );
 
-                /* Hide all other elements */
-                body > *:not(#gameHolder):not(#game-container):not([class*="game-container"]):not([class*="casino-game"]):not([class*="slot-container"]):not([class*="game-holder"]):not([class*="frameHolder"]):not([class*="game_holder"]):not([class*="game-frame"]):not([class*="game_frame"]):not(script):not(style) {
-                  display: none !important;
-                }
-              `;
-              iframeDoc.head.appendChild(style);
-
-              // Inject script to handle dynamic content and resizing
-              const script = iframeDoc.createElement('script');
-              script.textContent = `
-                function forceGameFullscreen() {
-                  // List of selectors to try
-                  const selectors = [
-                    '#gameHolder',
-                    '#game-container',
-                    '.game-container',
-                    '[class*="game-container"]',
-                    '[class*="casino-game"]',
-                    '[class*="slot-container"]',
-                    '[id*="game-container"]',
-                    '[class*="game-holder"]',
-                    '[class*="frameHolder"]',
-                    '[class*="game_holder"]',
-                    '[class*="game-frame"]',
-                    '[class*="game_frame"]'
-                  ];
-
-                  // Try each selector
-                  for (const selector of selectors) {
-                    const elements = document.querySelectorAll(selector);
-                    elements.forEach(element => {
-                      Object.assign(element.style, {
-                        position: 'fixed',
-                        top: '0',
-                        left: '0',
-                        width: '100%',
-                        height: '100%',
-                        transform: 'none',
-                        margin: '0',
-                        padding: '0',
-                        border: 'none',
-                        zIndex: '2147483647'
-                      });
-
-                      // Also style any iframes or canvases inside
-                      const gameElements = element.querySelectorAll('iframe, canvas, [class*="game-canvas"], [id*="game-canvas"]');
-                      gameElements.forEach(gameElement => {
-                        Object.assign(gameElement.style, {
-                          width: '100%',
-                          height: '100%',
-                          position: 'fixed',
-                          top: '0',
-                          left: '0',
-                          transform: 'none',
-                          margin: '0',
-                          padding: '0',
-                          border: 'none',
-                          zIndex: '2147483647'
-                        });
-                      });
-                    });
-                  }
-
-                  // Hide all other elements
-                  document.body.childNodes.forEach(node => {
-                    if (node.nodeType === 1 && !selectors.some(selector => node.matches(selector))) {
-                      if (node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
-                        (node as HTMLElement).style.display = 'none';
-                      }
-                    }
-                  });
-                }
-
-                // Run immediately and periodically
-                forceGameFullscreen();
-                setInterval(forceGameFullscreen, 1000);
-
-                // Run on any DOM changes
-                new MutationObserver(forceGameFullscreen).observe(document.body, {
-                  childList: true,
-                  subtree: true,
-                  attributes: true
-                });
-
-                // Run on window resize
-                window.addEventListener('resize', forceGameFullscreen);
-              `;
-              iframeDoc.head.appendChild(script);
+    if (newWindow) {
+      setGameWindow(newWindow);
+      
+      // Inject fullscreen styles when the window loads
+      newWindow.onload = () => {
+        try {
+          const doc = newWindow.document;
+          
+          // Add styles to make the game fullscreen
+          const style = doc.createElement('style');
+          style.textContent = `
+            body, html {
+              width: 100vw !important;
+              height: 100vh !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden !important;
             }
-          } catch (e) {
-            console.warn('Could not modify iframe content:', e);
-          }
-        }, 1000);
-      }
-    } catch (e) {
-      console.warn('Error accessing iframe content:', e);
+
+            /* Target all possible game containers */
+            #gameHolder,
+            #game-container,
+            .game-container,
+            [class*="game-container"],
+            [class*="casino-game"],
+            [class*="slot-container"],
+            [id*="game-container"],
+            [class*="game-holder"],
+            [class*="frameHolder"],
+            [class*="game_holder"],
+            [class*="game-frame"],
+            [class*="game_frame"] {
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100vw !important;
+              height: 100vh !important;
+              transform: none !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              border: none !important;
+              z-index: 2147483647 !important;
+            }
+
+            /* Target game elements */
+            iframe, canvas, [class*="game-canvas"], [id*="game-canvas"] {
+              width: 100vw !important;
+              height: 100vh !important;
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              transform: none !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              border: none !important;
+              z-index: 2147483647 !important;
+            }
+
+            /* Hide all other elements */
+            body > *:not(#gameHolder):not(#game-container):not([class*="game-container"]):not([class*="casino-game"]):not([class*="slot-container"]):not([class*="game-holder"]):not([class*="frameHolder"]):not([class*="game_holder"]):not([class*="game-frame"]):not([class*="game_frame"]):not(script):not(style) {
+              display: none !important;
+            }
+          `;
+          doc.head.appendChild(style);
+
+          // Request fullscreen
+          const requestFullscreen = () => {
+            try {
+              const element = doc.documentElement;
+              if (element.requestFullscreen) {
+                element.requestFullscreen();
+              } else {
+                // Use any to bypass TypeScript checking for vendor prefixes
+                const docAny = element as any;
+                if (docAny.webkitRequestFullscreen) {
+                  docAny.webkitRequestFullscreen();
+                } else if (docAny.mozRequestFullScreen) {
+                  docAny.mozRequestFullScreen();
+                } else if (docAny.msRequestFullscreen) {
+                  docAny.msRequestFullscreen();
+                }
+              }
+            } catch (e) {
+              console.warn('Fullscreen request failed:', e);
+            }
+          };
+
+          // Try to go fullscreen after a short delay
+          setTimeout(requestFullscreen, 1000);
+
+          // Add a button to manually trigger fullscreen
+          const fullscreenButton = doc.createElement('button');
+          fullscreenButton.textContent = 'Fullscreen';
+          fullscreenButton.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 2147483647;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+          `;
+          fullscreenButton.onclick = requestFullscreen;
+          doc.body.appendChild(fullscreenButton);
+        } catch (e) {
+          console.warn('Error setting up game window:', e);
+        }
+      };
+
+      // Focus the window
+      newWindow.focus();
     }
   };
 
@@ -218,18 +187,10 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
     <div className={`relative flex h-full w-full flex-col overflow-hidden ${className}`}>
       <div className="absolute right-2 top-2 z-50 flex items-center gap-2">
         <button
-          onClick={() => {
-            const iframe = iframeRef.current;
-            if (iframe && iframe.contentWindow) {
-              iframe.contentWindow.postMessage('clickFullscreen', '*');
-            }
-          }}
-          className="rounded-md bg-black/50 p-1 text-white opacity-50 hover:opacity-100"
-          title="Fullscreen"
+          onClick={openGameWindow}
+          className="rounded-md bg-primary px-6 py-3 text-lg font-medium text-primary-foreground hover:bg-primary/90"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-          </svg>
+          Open Game
         </button>
         <button
           onClick={handleClose}
@@ -268,7 +229,10 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
           src={formattedUrl}
           className="h-full w-full flex-1 border-none bg-background"
           sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-presentation allow-downloads allow-popups-to-escape-sandbox allow-top-navigation"
-          onLoad={handleLoad}
+          onLoad={() => {
+            setIsLoading(false);
+            setError(null);
+          }}
           onError={handleError}
           loading="eager"
           allow="fullscreen; autoplay; camera; microphone; display-capture"
