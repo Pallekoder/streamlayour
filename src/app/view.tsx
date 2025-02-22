@@ -114,7 +114,6 @@ export default function ViewPage() {
             {item.type === "browser" && item.url && (
               <BrowserWindow 
                 url={item.url} 
-                title={item.url} 
                 onClose={() => {
                   const newLayout = layout.filter(l => l.i !== item.i);
                   setLayout(newLayout);
