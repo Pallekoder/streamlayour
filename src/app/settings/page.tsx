@@ -299,15 +299,29 @@ export default function SettingsPage() {
   };
 
   const handleLayoutChange = (newLayout: Layout[]) => {
+    // Calculate maximum allowed positions based on editor dimensions
+    const maxRows = Math.floor(EDITOR_HEIGHT / SCALED_ROW_HEIGHT);
+
     // Ensure windows stay within visible bounds
     const constrainedLayout = newLayout.map((item) => {
-      const maxX = GRID_COLS - item.w;
-      const maxY = Math.floor(EDITOR_HEIGHT / SCALED_ROW_HEIGHT) - item.h;
+      // Get the item's current dimensions
+      const w = Math.min(item.w, GRID_COLS);
+      const h = Math.min(item.h, maxRows);
+
+      // Calculate maximum allowed positions
+      const maxX = GRID_COLS - w;
+      const maxY = maxRows - h;
+
+      // Constrain the position
+      const x = Math.min(Math.max(0, item.x), maxX);
+      const y = Math.min(Math.max(0, item.y), maxY);
 
       return {
         ...item,
-        x: Math.min(Math.max(0, item.x), maxX),
-        y: Math.min(Math.max(0, item.y), maxY),
+        x,
+        y,
+        w,
+        h
       };
     });
 

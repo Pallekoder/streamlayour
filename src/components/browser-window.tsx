@@ -41,6 +41,38 @@ export function BrowserWindow({ url, className = "", onClose }: BrowserWindowPro
   const handleLoad = () => {
     setIsLoading(false);
     setError(null);
+
+    // Try to find and click the fullscreen button in the iframe
+    try {
+      const iframe = iframeRef.current;
+      if (iframe) {
+        // Wait a bit for the content to be fully loaded
+        setTimeout(() => {
+          try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (iframeDoc) {
+              // Look for common fullscreen button selectors
+              const fullscreenButton = iframeDoc.querySelector(
+                '[data-test-id="game-fullscreen-button"], ' +
+                '.fullscreen-button, ' +
+                '.fullscreen-toggle, ' +
+                '[aria-label*="fullscreen" i], ' +
+                '[title*="fullscreen" i], ' +
+                'button:has(svg[class*="fullscreen" i])'
+              );
+              
+              if (fullscreenButton instanceof HTMLElement) {
+                fullscreenButton.click();
+              }
+            }
+          } catch (e) {
+            console.warn('Could not auto-fullscreen:', e);
+          }
+        }, 2000);
+      }
+    } catch (e) {
+      console.warn('Error accessing iframe content:', e);
+    }
   };
 
   const handleError = () => {
@@ -97,6 +129,19 @@ export function BrowserWindow({ url, className = "", onClose }: BrowserWindowPro
           onLoad={handleLoad}
           onError={handleError}
           loading="eager"
+          allow="fullscreen; autoplay; camera; microphone; display-capture"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            margin: 0,
+            padding: 0,
+            overflow: 'hidden',
+            zIndex: 1
+          }}
         />
       )}
     </div>
