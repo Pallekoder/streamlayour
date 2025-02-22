@@ -35,7 +35,7 @@ const STREAM_PLATFORMS = [
   { 
     id: "twitch", 
     name: "Twitch", 
-    url: "https://www.twitch.tv/embed/USERNAME/chat",
+    url: "https://www.twitch.tv/embed/USERNAME/chat?parent=" + window.location.hostname,
     authUrl: "https://www.twitch.tv/login"
   },
   { 
@@ -612,7 +612,9 @@ export default function SettingsPage() {
             onLayoutChange={handleLayoutChange}
             draggableHandle=".drag-handle"
             compactType={null}
-            preventCollision={false}
+            preventCollision
+            isBounded
+            maxRows={Math.floor(EDITOR_HEIGHT / SCALED_ROW_HEIGHT)}
             margin={[0, 0]}
             containerPadding={[0, 0]}
             useCSSTransforms

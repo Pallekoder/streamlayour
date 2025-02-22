@@ -14,9 +14,11 @@ export function BrowserWindow({ url, className = "", onClose }: BrowserWindowPro
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  const handleClose = () => {
-    if (onClose) {
-      onClose();
+  const handleClose = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (iframeRef.current) {
+      iframeRef.current.src = formattedUrl;
     }
   };
 
@@ -64,9 +66,29 @@ export function BrowserWindow({ url, className = "", onClose }: BrowserWindowPro
               if (fullscreenButton instanceof HTMLElement) {
                 fullscreenButton.click();
               }
+
+              // Hide scrollbars and unwanted elements
+              const style = iframeDoc.createElement('style');
+              style.textContent = `
+                body::-webkit-scrollbar { display: none !important; }
+                body { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+                .left-navigation, .sidebar, .side-nav, nav[class*="sidebar"], div[class*="sidebar"] { display: none !important; }
+                #game-container, #game-wrapper, .game-container, .game-wrapper { 
+                  width: 100vw !important; 
+                  height: 100vh !important; 
+                  max-width: none !important; 
+                  max-height: none !important; 
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                }
+              `;
+              iframeDoc.head.appendChild(style);
             }
           } catch (e) {
-            console.warn('Could not auto-fullscreen:', e);
+            console.warn('Could not modify iframe content:', e);
           }
         }, 2000);
       }
@@ -92,7 +114,7 @@ export function BrowserWindow({ url, className = "", onClose }: BrowserWindowPro
         <button
           onClick={handleClose}
           className="rounded-md bg-black/50 p-1 text-white opacity-50 hover:opacity-100"
-          title="Close"
+          title="Refresh"
         >
           <X className="h-4 w-4" />
         </button>
