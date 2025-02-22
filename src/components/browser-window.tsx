@@ -43,16 +43,36 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
     setIsLoading(false);
     setError(null);
 
-    // Try to find and click the fullscreen button in the iframe
     try {
       const iframe = iframeRef.current;
       if (iframe) {
-        // Wait a bit for the content to be fully loaded
+        // Send fullscreen request via postMessage
+        const fullscreenMessage = {
+          action: 'requestFullscreen',
+          type: 'gameFullscreen'
+        };
+
+        // Try different message formats that slot sites might use
+        const messages = [
+          fullscreenMessage,
+          { command: 'fullscreen' },
+          { type: 'fullscreen' },
+          { action: 'maximize' },
+          { method: 'fullscreen', value: true },
+          { event: 'fullscreen' }
+        ];
+
+        // Wait for iframe to be ready
         setTimeout(() => {
           try {
+            // Send all possible message formats
+            messages.forEach(msg => {
+              iframe.contentWindow?.postMessage(msg, '*');
+            });
+
             const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
             if (iframeDoc) {
-              // Look for common fullscreen button selectors
+              // Enhanced selectors for fullscreen buttons (as backup)
               const fullscreenButton = iframeDoc.querySelector(
                 '[data-test-id="game-fullscreen-button"], ' +
                 '.fullscreen-button, ' +
@@ -65,89 +85,143 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                 '.game-controls__fullscreen, ' +
                 '.game-controls__button--fullscreen, ' +
                 '[class*="fullscreen-button"], ' +
-                '[id*="fullscreen-button"]'
+                '[id*="fullscreen-button"], ' +
+                '.casino-game-fullscreen, ' +
+                '.slot-fullscreen-button, ' +
+                '.maximize-game, ' +
+                '.expand-game, ' +
+                '[data-role="fullscreen-button"], ' +
+                '[data-action="fullscreen"]'
               );
               
               if (fullscreenButton instanceof HTMLElement) {
                 fullscreenButton.click();
               }
 
-              // Hide unwanted UI elements
+              // Add mutation observer to handle dynamic content
+              const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                  if (mutation.addedNodes.length) {
+                    const newFullscreenButton = iframeDoc.querySelector(
+                      '[data-test-id="game-fullscreen-button"], .fullscreen-button'
+                    );
+                    if (newFullscreenButton instanceof HTMLElement) {
+                      newFullscreenButton.click();
+                      observer.disconnect();
+                    }
+                  }
+                });
+              });
+
+              observer.observe(iframeDoc.body, {
+                childList: true,
+                subtree: true
+              });
+
+              // Enhanced CSS for fullscreen
               const style = iframeDoc.createElement('style');
               style.textContent = `
-                /* Hide scrollbars */
-                ::-webkit-scrollbar { display: none !important; }
-                * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
-                
-                /* Hide navigation elements */
-                nav, header, .header, .navigation, .nav-bar, .navbar, .top-bar, .topbar,
-                .left-navigation, .sidebar, .side-nav, nav[class*="sidebar"], div[class*="sidebar"],
-                .menu-bar, .menubar, .toolbar, .tool-bar, .controls-bar, .game-controls:not(.game-control--fullscreen),
-                [class*="navigation"], [class*="header"], [class*="toolbar"], [class*="controls"]:not(.fullscreen),
-                .game-menu, .game-overlay, .game-ui, .game-controls-wrapper:not(.fullscreen),
-                [class*="menu-"], [class*="overlay-"], [class*="ui-"], [class*="controls-"]:not(.fullscreen),
-                [id*="menu-"], [id*="overlay-"], [id*="ui-"], [id*="controls-"]:not(.fullscreen) { 
-                  display: none !important; 
-                }
-                
-                /* Make game container fullscreen */
-                #game-container, #game-wrapper, .game-container, .game-wrapper,
-                [class*="game-container"], [class*="game-wrapper"], [id*="game-container"], [id*="game-wrapper"],
-                .game-iframe-wrapper, .game-iframe-container,
-                .game, .game-frame, .game-area, .game-view,
-                [class*="game-"], [id*="game-"],
-                .slot-container, .slot-wrapper, .slot-game, .slot-view,
-                [class*="slot-"], [id*="slot-"] { 
-                  width: 100vw !important; 
-                  height: 100vh !important; 
-                  max-width: none !important; 
-                  max-height: none !important; 
-                  position: fixed !important;
-                  top: 0 !important;
-                  left: 0 !important;
-                  right: 0 !important;
-                  bottom: 0 !important;
+                /* Base resets */
+                * {
                   margin: 0 !important;
                   padding: 0 !important;
-                  border: none !important;
-                  background: transparent !important;
-                  transform: none !important;
-                  transition: none !important;
-                }
-                
-                /* Ensure the game takes full space */
-                body, html {
                   overflow: hidden !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  width: 100vw !important;
-                  height: 100vh !important;
-                  background: transparent !important;
                 }
-                
-                /* Hide any overlay elements except game */
-                body > *:not(#game-container):not(.game-container):not(#game-wrapper):not(.game-wrapper):not(script):not(style):not(.game):not(.slot-container) {
+
+                /* Hide scrollbars */
+                ::-webkit-scrollbar { 
+                  display: none !important; 
+                  width: 0 !important;
+                  height: 0 !important;
+                }
+
+                /* Hide all UI elements except game */
+                body > *:not(#game-container):not(.game-container):not(#game-wrapper):not(.game-wrapper):not(script):not(style):not(.game):not(.slot-container):not([class*="game-"]):not([id*="game-"]) {
                   display: none !important;
                 }
 
-                /* Ensure iframes are fullscreen */
-                iframe {
-                  width: 100vw !important;
-                  height: 100vh !important;
+                /* Game container styles */
+                #game-container, .game-container, #game-wrapper, .game-wrapper,
+                [class*="game-container"], [class*="game-wrapper"],
+                [id*="game-container"], [id*="game-wrapper"],
+                .slot-container, .slot-wrapper, .casino-game-container,
+                [class*="slot-"], [class*="casino-game-"] {
                   position: fixed !important;
                   top: 0 !important;
                   left: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  max-width: 100vw !important;
+                  max-height: 100vh !important;
+                  transform: none !important;
+                  border: none !important;
+                  border-radius: 0 !important;
+                  background: #000 !important;
+                  z-index: 2147483647 !important;
+                }
+
+                /* Ensure iframes take full space */
+                iframe {
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
                   border: none !important;
                   margin: 0 !important;
                   padding: 0 !important;
+                  z-index: 2147483647 !important;
+                }
+
+                /* Force fullscreen on common game elements */
+                .game, .game-frame, .game-area, .game-view,
+                .slot-game, .slot-view, .casino-game,
+                [class*="game-"], [class*="slot-"], [class*="casino-"] {
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  max-width: none !important;
+                  max-height: none !important;
+                  transform: none !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  border: none !important;
                 }
               `;
               iframeDoc.head.appendChild(style);
+
+              // Force body to be fullscreen
+              iframeDoc.body.style.cssText = `
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                overflow: hidden !important;
+                background: #000 !important;
+              `;
             }
           } catch (e) {
             console.warn('Could not modify iframe content:', e);
           }
         }, 2000);
+
+        // Listen for messages from the iframe
+        const handleMessage = (event: MessageEvent) => {
+          console.log('Received message from iframe:', event.data);
+          // Handle any responses or events from the game
+          if (event.data.type === 'gameFullscreenResponse' || 
+              event.data.action === 'fullscreenResponse' ||
+              event.data.status === 'fullscreen') {
+            console.log('Game responded to fullscreen request');
+          }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => {
+          window.removeEventListener('message', handleMessage);
+        };
       }
     } catch (e) {
       console.warn('Error accessing iframe content:', e);

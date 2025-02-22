@@ -43,7 +43,7 @@ export default function SettingsPage() {
     { 
       id: "twitch", 
       name: "Twitch", 
-      url: "https://www.twitch.tv/embed/USERNAME/chat?parent=localhost",
+      url: `https://www.twitch.tv/embed/USERNAME/chat?parent=${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}`,
       authUrl: "https://www.twitch.tv/login"
     },
     { 
@@ -617,8 +617,8 @@ export default function SettingsPage() {
             containerPadding={[0, 0]}
             margin={[0, 0]}
             useCSSTransforms
-            autoSize
             verticalCompact={false}
+            maxRows={Math.floor(EDITOR_HEIGHT / SCALED_ROW_HEIGHT)}
           >
             {layout.map((item) => (
               <div 
