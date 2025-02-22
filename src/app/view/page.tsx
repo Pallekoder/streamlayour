@@ -25,13 +25,19 @@ interface LayoutItem {
   zIndex?: number;
 }
 
+interface BackgroundSettingsType {
+  type: string;
+  value: string;
+  opacity: number;
+}
+
 export default function ViewPage() {
   const [layout, setLayout] = React.useState<LayoutItem[]>([]);
   const [windowSize, setWindowSize] = React.useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 1920,
     height: typeof window !== 'undefined' ? window.innerHeight : 1080,
   });
-  const [backgroundSettings, setBackgroundSettings] = React.useState<any>({
+  const [backgroundSettings, setBackgroundSettings] = React.useState<BackgroundSettingsType>({
     type: "color",
     value: "#1a1b36",
     opacity: 100

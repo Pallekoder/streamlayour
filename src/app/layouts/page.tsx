@@ -91,7 +91,7 @@ export default function LayoutsPage() {
     localStorage.setItem("currentLayout", JSON.stringify(layout));
     // Also save to presets if needed
     const presets = JSON.parse(localStorage.getItem("layoutPresets") || "[]");
-    const currentPreset = presets.find((p: any) => p.name === "Current Layout");
+    const currentPreset = presets.find((p: { name: string }) => p.name === "Current Layout");
     if (currentPreset) {
       currentPreset.layout = layout;
     } else {

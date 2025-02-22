@@ -21,7 +21,7 @@ interface WebcamDevice {
 
 export default function LayoutPage() {
   const [savedLayouts, setSavedLayouts] = React.useState<LayoutPreset[]>([]);
-  const [currentLayout, setCurrentLayout] = React.useState<any[]>([]);
+  const [currentLayout, setCurrentLayout] = React.useState<LayoutItem[]>([]);
   const [casinoUrl, setCasinoUrl] = React.useState("");
   const [webcamUrl, setWebcamUrl] = React.useState("");
   const [isMuted, setIsMuted] = React.useState(false);
@@ -303,7 +303,7 @@ export default function LayoutPage() {
                       SAVE
                     </button>
                   </div>
-        </div>
+                </div>
 
                 <div>
                   <label className="mb-2 block text-sm text-white">AUDIO</label>

@@ -20,9 +20,10 @@ export function WebcamView({ deviceId, className = "" }: WebcamViewProps) {
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const videoElement = videoRef.current;
         
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+        if (videoElement) {
+          videoElement.srcObject = stream;
         }
       } catch (err) {
         console.error('Error accessing webcam:', err);
@@ -34,8 +35,9 @@ export function WebcamView({ deviceId, className = "" }: WebcamViewProps) {
 
     // Cleanup function to stop the webcam when component unmounts
     return () => {
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+      const videoElement = videoRef.current;
+      if (videoElement?.srcObject) {
+        const stream = videoElement.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
       }
     };

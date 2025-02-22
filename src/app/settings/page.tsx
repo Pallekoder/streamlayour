@@ -301,7 +301,7 @@ export default function SettingsPage() {
 
   const handleLayoutChange = (newLayout: Layout[]) => {
     // Ensure windows stay within visible bounds
-    const constrainedLayout = newLayout.map((item, index) => {
+    const constrainedLayout = newLayout.map((item) => {
       const maxX = GRID_COLS - item.w;
       const maxY = Math.floor(EDITOR_HEIGHT / SCALED_ROW_HEIGHT) - item.h;
 
@@ -313,12 +313,12 @@ export default function SettingsPage() {
     });
 
     setLayout((prevLayout) =>
-      prevLayout.map((item, index) => ({
+      prevLayout.map((item, i) => ({
         ...item,
-        x: constrainedLayout[index].x,
-        y: constrainedLayout[index].y,
-        w: constrainedLayout[index].w,
-        h: constrainedLayout[index].h,
+        x: constrainedLayout[i].x,
+        y: constrainedLayout[i].y,
+        w: constrainedLayout[i].w,
+        h: constrainedLayout[i].h,
       }))
     );
   };

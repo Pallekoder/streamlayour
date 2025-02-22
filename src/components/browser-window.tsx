@@ -23,7 +23,7 @@ export function BrowserWindow({ url, className = "", onClose }: BrowserWindowPro
   // Format URL and ensure it's valid
   const formattedUrl = React.useMemo(() => {
     try {
-      let urlToFormat = url.trim();
+      const urlToFormat = url.trim();
       
       // If it's a relative URL or already has a protocol, leave it as is
       if (urlToFormat.startsWith('/') || urlToFormat.startsWith('http://') || urlToFormat.startsWith('https://')) {
