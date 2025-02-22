@@ -124,18 +124,24 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
           const requestFullscreen = () => {
             try {
               const element = doc.documentElement;
+              
+              // Define interface for vendor-prefixed fullscreen methods
+              interface FullscreenElement extends HTMLElement {
+                webkitRequestFullscreen?: () => Promise<void>;
+                mozRequestFullScreen?: () => Promise<void>;
+                msRequestFullscreen?: () => Promise<void>;
+              }
+
+              const fullscreenElement = element as FullscreenElement;
+
               if (element.requestFullscreen) {
                 element.requestFullscreen();
-              } else {
-                // Use any to bypass TypeScript checking for vendor prefixes
-                const docAny = element as any;
-                if (docAny.webkitRequestFullscreen) {
-                  docAny.webkitRequestFullscreen();
-                } else if (docAny.mozRequestFullScreen) {
-                  docAny.mozRequestFullScreen();
-                } else if (docAny.msRequestFullscreen) {
-                  docAny.msRequestFullscreen();
-                }
+              } else if (fullscreenElement.webkitRequestFullscreen) {
+                fullscreenElement.webkitRequestFullscreen();
+              } else if (fullscreenElement.mozRequestFullScreen) {
+                fullscreenElement.mozRequestFullScreen();
+              } else if (fullscreenElement.msRequestFullscreen) {
+                fullscreenElement.msRequestFullscreen();
               }
             } catch (e) {
               console.warn('Fullscreen request failed:', e);
