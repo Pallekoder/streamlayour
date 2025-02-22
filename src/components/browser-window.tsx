@@ -59,20 +59,34 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                 '.fullscreen-toggle, ' +
                 '[aria-label*="fullscreen" i], ' +
                 '[title*="fullscreen" i], ' +
-                'button:has(svg[class*="fullscreen" i])'
+                'button:has(svg[class*="fullscreen" i]), ' +
+                '.game-control--fullscreen, ' +
+                '.game-fullscreen-button'
               );
               
               if (fullscreenButton instanceof HTMLElement) {
                 fullscreenButton.click();
               }
 
-              // Hide scrollbars and unwanted elements
+              // Hide unwanted UI elements
               const style = iframeDoc.createElement('style');
               style.textContent = `
-                body::-webkit-scrollbar { display: none !important; }
-                body { scrollbar-width: none !important; -ms-overflow-style: none !important; }
-                .left-navigation, .sidebar, .side-nav, nav[class*="sidebar"], div[class*="sidebar"] { display: none !important; }
-                #game-container, #game-wrapper, .game-container, .game-wrapper { 
+                /* Hide scrollbars */
+                ::-webkit-scrollbar { display: none !important; }
+                * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+                
+                /* Hide navigation elements */
+                nav, header, .header, .navigation, .nav-bar, .navbar, .top-bar, .topbar,
+                .left-navigation, .sidebar, .side-nav, nav[class*="sidebar"], div[class*="sidebar"],
+                .menu-bar, .menubar, .toolbar, .tool-bar, .controls-bar, .game-controls:not(.game-control--fullscreen),
+                [class*="navigation"], [class*="header"], [class*="toolbar"], [class*="controls"]:not(.fullscreen) { 
+                  display: none !important; 
+                }
+                
+                /* Make game container fullscreen */
+                #game-container, #game-wrapper, .game-container, .game-wrapper,
+                [class*="game-container"], [class*="game-wrapper"], [id*="game-container"], [id*="game-wrapper"],
+                .game-iframe-wrapper, .game-iframe-container { 
                   width: 100vw !important; 
                   height: 100vh !important; 
                   max-width: none !important; 
@@ -82,6 +96,22 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                   left: 0 !important;
                   margin: 0 !important;
                   padding: 0 !important;
+                  border: none !important;
+                  background: transparent !important;
+                }
+                
+                /* Ensure the game takes full space */
+                body, html {
+                  overflow: hidden !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                }
+                
+                /* Hide any overlay elements except game */
+                body > *:not(#game-container):not(.game-container):not(#game-wrapper):not(.game-wrapper):not(script):not(style) {
+                  display: none !important;
                 }
               `;
               iframeDoc.head.appendChild(style);

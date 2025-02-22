@@ -43,7 +43,7 @@ export default function SettingsPage() {
     { 
       id: "twitch", 
       name: "Twitch", 
-      url: "https://www.twitch.tv/embed/USERNAME/chat?parent=" + (typeof window !== 'undefined' ? window.location.hostname : ''),
+      url: "https://www.twitch.tv/popout/" + (typeof window !== 'undefined' ? window.location.hostname : '') + "/chat?darkpopout&parent=" + (typeof window !== 'undefined' ? window.location.hostname : ''),
       authUrl: "https://www.twitch.tv/login"
     },
     { 

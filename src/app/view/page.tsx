@@ -193,6 +193,13 @@ export default function ViewPage() {
                     className="h-full w-full border-none"
                     sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-presentation"
                     title="Chat"
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      margin: 0,
+                      padding: 0,
+                      overflow: 'hidden'
+                    }}
                   />
                 )}
                 {item.type === "camera" && item.deviceId && (
