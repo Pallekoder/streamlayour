@@ -9,7 +9,6 @@ interface BrowserWindowProps {
 }
 
 export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
-  const containerRef = React.useRef<HTMLDivElement>(null);
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
