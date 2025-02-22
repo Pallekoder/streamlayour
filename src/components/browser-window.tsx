@@ -8,6 +8,11 @@ interface BrowserWindowProps {
   className?: string;
 }
 
+// Define interface for HTML Object Element with contentWindow
+interface HTMLObjectElementWithWindow extends HTMLObjectElement {
+  contentWindow: Window | null;
+}
+
 export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -27,14 +32,14 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
     }
   }, [url]);
 
-  const handleRefresh = () => {
+  const handleRefresh = React.useCallback(() => {
     setIsLoading(true);
     setError(null);
     
     // Force reload by recreating the object element
     if (containerRef.current) {
       containerRef.current.innerHTML = '';
-      const object = document.createElement('object');
+      const object = document.createElement('object') as HTMLObjectElementWithWindow;
       object.data = formattedUrl;
       object.type = 'text/html';
       object.style.cssText = 'width: 100%; height: 100%; border: none;';
@@ -44,7 +49,7 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
         setIsLoading(false);
         try {
           // Try to access the object's content window
-          const contentWindow = (object as any).contentWindow;
+          const contentWindow = object.contentWindow;
           if (contentWindow) {
             // Apply fullscreen styles
             const style = document.createElement('style');
@@ -86,11 +91,11 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
 
       containerRef.current.appendChild(object);
     }
-  };
+  }, [formattedUrl]);
 
   React.useEffect(() => {
     handleRefresh();
-  }, [formattedUrl]);
+  }, [handleRefresh]);
 
   const handleFullscreen = () => {
     if (containerRef.current) {
