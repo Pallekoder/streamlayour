@@ -61,7 +61,11 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                 '[title*="fullscreen" i], ' +
                 'button:has(svg[class*="fullscreen" i]), ' +
                 '.game-control--fullscreen, ' +
-                '.game-fullscreen-button'
+                '.game-fullscreen-button, ' +
+                '.game-controls__fullscreen, ' +
+                '.game-controls__button--fullscreen, ' +
+                '[class*="fullscreen-button"], ' +
+                '[id*="fullscreen-button"]'
               );
               
               if (fullscreenButton instanceof HTMLElement) {
@@ -79,14 +83,21 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                 nav, header, .header, .navigation, .nav-bar, .navbar, .top-bar, .topbar,
                 .left-navigation, .sidebar, .side-nav, nav[class*="sidebar"], div[class*="sidebar"],
                 .menu-bar, .menubar, .toolbar, .tool-bar, .controls-bar, .game-controls:not(.game-control--fullscreen),
-                [class*="navigation"], [class*="header"], [class*="toolbar"], [class*="controls"]:not(.fullscreen) { 
+                [class*="navigation"], [class*="header"], [class*="toolbar"], [class*="controls"]:not(.fullscreen),
+                .game-menu, .game-overlay, .game-ui, .game-controls-wrapper:not(.fullscreen),
+                [class*="menu-"], [class*="overlay-"], [class*="ui-"], [class*="controls-"]:not(.fullscreen),
+                [id*="menu-"], [id*="overlay-"], [id*="ui-"], [id*="controls-"]:not(.fullscreen) { 
                   display: none !important; 
                 }
                 
                 /* Make game container fullscreen */
                 #game-container, #game-wrapper, .game-container, .game-wrapper,
                 [class*="game-container"], [class*="game-wrapper"], [id*="game-container"], [id*="game-wrapper"],
-                .game-iframe-wrapper, .game-iframe-container { 
+                .game-iframe-wrapper, .game-iframe-container,
+                .game, .game-frame, .game-area, .game-view,
+                [class*="game-"], [id*="game-"],
+                .slot-container, .slot-wrapper, .slot-game, .slot-view,
+                [class*="slot-"], [id*="slot-"] { 
                   width: 100vw !important; 
                   height: 100vh !important; 
                   max-width: none !important; 
@@ -94,10 +105,14 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                   position: fixed !important;
                   top: 0 !important;
                   left: 0 !important;
+                  right: 0 !important;
+                  bottom: 0 !important;
                   margin: 0 !important;
                   padding: 0 !important;
                   border: none !important;
                   background: transparent !important;
+                  transform: none !important;
+                  transition: none !important;
                 }
                 
                 /* Ensure the game takes full space */
@@ -107,11 +122,24 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                   padding: 0 !important;
                   width: 100vw !important;
                   height: 100vh !important;
+                  background: transparent !important;
                 }
                 
                 /* Hide any overlay elements except game */
-                body > *:not(#game-container):not(.game-container):not(#game-wrapper):not(.game-wrapper):not(script):not(style) {
+                body > *:not(#game-container):not(.game-container):not(#game-wrapper):not(.game-wrapper):not(script):not(style):not(.game):not(.slot-container) {
                   display: none !important;
+                }
+
+                /* Ensure iframes are fullscreen */
+                iframe {
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  border: none !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
                 }
               `;
               iframeDoc.head.appendChild(style);

@@ -43,7 +43,7 @@ export default function SettingsPage() {
     { 
       id: "twitch", 
       name: "Twitch", 
-      url: "https://www.twitch.tv/popout/" + (typeof window !== 'undefined' ? window.location.hostname : '') + "/chat?darkpopout&parent=" + (typeof window !== 'undefined' ? window.location.hostname : ''),
+      url: "https://www.twitch.tv/embed/USERNAME/chat?parent=localhost",
       authUrl: "https://www.twitch.tv/login"
     },
     { 
@@ -614,10 +614,11 @@ export default function SettingsPage() {
             compactType={null}
             preventCollision
             isBounded
-            maxRows={Math.floor(EDITOR_HEIGHT / SCALED_ROW_HEIGHT)}
-            margin={[0, 0]}
             containerPadding={[0, 0]}
+            margin={[0, 0]}
             useCSSTransforms
+            autoSize
+            verticalCompact={false}
           >
             {layout.map((item) => (
               <div 
@@ -628,10 +629,7 @@ export default function SettingsPage() {
                   !item.isVisible ? "opacity-50" : ""
                 }`}
                 style={{ 
-                  zIndex: item.zIndex || 1,
-                  position: 'absolute',
-                  width: '100%',
-                  height: '100%'
+                  zIndex: item.zIndex || 1
                 }}
                 onClick={() => setSelectedItem(item)}
               >
