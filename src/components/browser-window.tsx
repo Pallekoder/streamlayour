@@ -55,72 +55,166 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
               const script = iframeDoc.createElement('script');
               script.textContent = `
                 function resizeGame() {
-                  // Common game container selectors
-                  const selectors = [
-                    '#game-container',
-                    '.game-container',
-                    '#game-wrapper',
-                    '.game-wrapper',
-                    '.slot-container',
-                    '.casino-game',
-                    '[class*="game-container"]',
-                    '[class*="slot-container"]',
-                    '[id*="game-container"]',
-                    '[class*="casino-game"]'
-                  ];
-
-                  // Try to find the game container
-                  let gameContainer = null;
-                  for (const selector of selectors) {
-                    const element = document.querySelector(selector);
-                    if (element) {
-                      gameContainer = element;
-                      break;
-                    }
-                  }
+                  // First try to find the casino game container with its specific classes
+                  const gameContainer = document.querySelector(
+                    '.casino-game_holder__HIyq6.casino-game_bottomMenuEnabled__10Bnn[data-test="gameContainer"], ' +
+                    '[class*="casino-game_holder"][class*="bottomMenuEnabled"]'
+                  );
 
                   if (gameContainer) {
-                    // Force the container to be fullscreen
+                    // Style the main container
                     Object.assign(gameContainer.style, {
                       position: 'fixed',
                       top: '0',
                       left: '0',
                       width: '100vw',
                       height: '100vh',
-                      maxWidth: '100vw',
-                      maxHeight: '100vh',
                       margin: '0',
                       padding: '0',
                       border: 'none',
-                      zIndex: '2147483647',
-                      transform: 'none',
-                      transition: 'none'
+                      zIndex: '2147483647'
                     });
 
-                    // Try to find and resize the actual game element inside the container
-                    const gameElement = gameContainer.querySelector('canvas, iframe, [class*="game"], [class*="slot"]');
-                    if (gameElement) {
-                      Object.assign(gameElement.style, {
-                        width: '100%',
-                        height: '100%',
-                        position: 'absolute',
+                    // Find the frame holder
+                    const frameHolder = gameContainer.querySelector(
+                      '.casino-gamme_frameHolder__brthK, ' +
+                      '[class*="casino-game_frameHolder"]'
+                    );
+
+                    if (frameHolder) {
+                      Object.assign(frameHolder.style, {
+                        position: 'fixed',
                         top: '0',
-                        left: '0'
+                        left: '0',
+                        width: '100vw',
+                        height: '100vh',
+                        margin: '0',
+                        padding: '0',
+                        border: 'none',
+                        zIndex: '2147483647'
+                      });
+
+                      // Find the game holder and its iframe
+                      const gameHolder = frameHolder.querySelector('#gameHolder');
+                      if (gameHolder) {
+                        Object.assign(gameHolder.style, {
+                          position: 'fixed',
+                          top: '0',
+                          left: '0',
+                          width: '100vw',
+                          height: '100vh',
+                          margin: '0',
+                          padding: '0',
+                          border: 'none',
+                          zIndex: '2147483647'
+                        });
+
+                        // Style the iframe inside gameHolder
+                        const gameIframe = gameHolder.querySelector('iframe');
+                        if (gameIframe) {
+                          Object.assign(gameIframe.style, {
+                            position: 'fixed',
+                            top: '0',
+                            left: '0',
+                            width: '100vw',
+                            height: '100vh',
+                            margin: '0',
+                            padding: '0',
+                            border: 'none',
+                            transform: 'none',
+                            transition: 'none',
+                            zIndex: '2147483647'
+                          });
+
+                          // Try to access and style the iframe's content
+                          try {
+                            const iframeDoc = gameIframe.contentDocument || gameIframe.contentWindow?.document;
+                            if (iframeDoc) {
+                              const style = iframeDoc.createElement('style');
+                              style.textContent = 'body, html { width: 100vw !important; height: 100vh !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; } * { margin: 0 !important; padding: 0 !important; }';
+                              iframeDoc.head.appendChild(style);
+                            }
+                          } catch (e) {
+                            console.warn('Could not style iframe content:', e);
+                          }
+                        }
+                      }
+
+                      // Hide all other elements
+                      document.body.childNodes.forEach(node => {
+                        if (node !== gameContainer && node.nodeType === 1) {
+                          (node as HTMLElement).style.display = 'none';
+                        }
                       });
                     }
+                  } else {
+                    // Fallback to generic selectors if specific structure not found
+                    const containers = [
+                      '#game-container',
+                      '.game-container',
+                      '#game-wrapper',
+                      '.game-wrapper',
+                      '.slot-container',
+                      '[class*="game-container"]',
+                      '[class*="slot-container"]',
+                      '[id*="game-container"]'
+                    ];
 
-                    // Hide all other elements
-                    document.body.childNodes.forEach(node => {
-                      if (node !== gameContainer && node.nodeType === 1) {
-                        (node as HTMLElement).style.display = 'none';
+                    let fallbackContainer = null;
+                    for (const selector of containers) {
+                      const element = document.querySelector(selector);
+                      if (element) {
+                        fallbackContainer = element;
+                        break;
                       }
-                    });
+                    }
+
+                    if (fallbackContainer) {
+                      Object.assign(fallbackContainer.style, {
+                        position: 'fixed',
+                        top: '0',
+                        left: '0',
+                        width: '100vw',
+                        height: '100vh',
+                        maxWidth: '100vw',
+                        maxHeight: '100vh',
+                        margin: '0',
+                        padding: '0',
+                        border: 'none',
+                        zIndex: '2147483647',
+                        transform: 'none',
+                        transition: 'none'
+                      });
+
+                      const gameElement = fallbackContainer.querySelector('iframe, canvas, [class*="game"], [class*="slot"]');
+                      if (gameElement) {
+                        Object.assign(gameElement.style, {
+                          width: '100%',
+                          height: '100%',
+                          position: 'fixed',
+                          top: '0',
+                          left: '0',
+                          margin: '0',
+                          padding: '0',
+                          border: 'none'
+                        });
+                      }
+                    }
                   }
                 }
 
                 // Run immediately and on any window resize
                 resizeGame();
                 window.addEventListener('resize', resizeGame);
+
+                // Rerun on dynamic content changes
+                const observer = new MutationObserver(() => {
+                  resizeGame();
+                });
+                observer.observe(document.body, {
+                  childList: true,
+                  subtree: true
+                });
 
                 // Intercept fullscreen requests
                 document.addEventListener('fullscreenchange', resizeGame);
@@ -157,36 +251,65 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                   padding: 0 !important;
                 }
 
-                /* Game container styles */
-                #game-container, .game-container, #game-wrapper, .game-wrapper,
-                [class*="game-container"], [class*="game-wrapper"],
-                [id*="game-container"], [id*="game-wrapper"],
-                .slot-container, .slot-wrapper, .casino-game-container,
-                [class*="slot-"], [class*="casino-game-"] {
+                /* Main container styles */
+                .casino-game_holder__HIyq6.casino-game_bottomMenuEnabled__10Bnn,
+                [class*="casino-game_holder"][class*="bottomMenuEnabled"] {
                   position: fixed !important;
                   top: 0 !important;
                   left: 0 !important;
                   width: 100vw !important;
                   height: 100vh !important;
-                  max-width: 100vw !important;
-                  max-height: 100vh !important;
-                  transform: none !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
                   border: none !important;
-                  border-radius: 0 !important;
-                  background: #000 !important;
                   z-index: 2147483647 !important;
                 }
 
-                /* Game element styles */
-                canvas, 
-                [class*="game-canvas"],
-                [class*="slot-canvas"],
-                [class*="casino-canvas"] {
-                  width: 100% !important;
-                  height: 100% !important;
-                  position: absolute !important;
+                /* Frame holder styles */
+                .casino-gamme_frameHolder__brthK,
+                [class*="casino-game_frameHolder"] {
+                  position: fixed !important;
                   top: 0 !important;
                   left: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  border: none !important;
+                  z-index: 2147483647 !important;
+                }
+
+                /* Game holder styles */
+                #gameHolder {
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  border: none !important;
+                  z-index: 2147483647 !important;
+                }
+
+                /* Game iframe styles */
+                #gameHolder iframe {
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  border: none !important;
+                  transform: none !important;
+                  transition: none !important;
+                  z-index: 2147483647 !important;
+                }
+
+                /* Hide all other elements */
+                body > *:not([class*="casino-game_holder"]):not(script):not(style) {
+                  display: none !important;
                 }
               `;
               iframeDoc.head.appendChild(style);
