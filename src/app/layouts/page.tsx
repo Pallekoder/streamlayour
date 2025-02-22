@@ -109,15 +109,6 @@ export default function LayoutsPage() {
     setViewWindow(newWindow);
   };
 
-  const refreshViewMode = () => {
-    saveLayout();
-    if (viewWindow && !viewWindow.closed) {
-      viewWindow.location.reload();
-    } else {
-      openViewMode();
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#1a1b36] p-8">
       <div className="mx-auto max-w-7xl">

@@ -12,7 +12,7 @@ export function WebcamView({ deviceId, className = "" }: WebcamViewProps) {
   const [error, setError] = React.useState<string>("");
 
   React.useEffect(() => {
-    let currentVideoElement = videoRef.current;
+    const currentVideoElement = videoRef.current;
 
     async function setupWebcam() {
       try {

@@ -62,8 +62,7 @@ interface SavedLayout {
 export default function SettingsPage() {
   const [layout, setLayout] = React.useState<LayoutItem[]>([]);
   const [selectedType, setSelectedType] = React.useState<LayoutItem["type"]>("browser");
-  const [selectedItem, setSelectedItem] = React.useState<string | null>(null);
-  const [isSnapping, setIsSnapping] = React.useState(true);
+  const [selectedItem, setSelectedItem] = React.useState<LayoutItem | null>(null);
   const [backgroundSettings, setBackgroundSettings] = React.useState<BackgroundSettingsType>({
     type: "color",
     value: "#1a1b36",
@@ -426,14 +425,14 @@ export default function SettingsPage() {
             <h2 className="mb-2 text-sm font-medium text-white">LAYER CONTROL</h2>
             <div className="flex gap-2">
               <button
-                onClick={() => selectedItem && updateItemZIndex(selectedItem, -1)}
+                onClick={() => selectedItem && updateItemZIndex(selectedItem.i, -1)}
                 className="flex-1 rounded-md bg-[#2e3054] px-4 py-2 text-white transition-colors hover:bg-[#3d3f6d]"
                 disabled={!selectedItem}
               >
                 Move Back
               </button>
               <button
-                onClick={() => selectedItem && updateItemZIndex(selectedItem, 1)}
+                onClick={() => selectedItem && updateItemZIndex(selectedItem.i, 1)}
                 className="flex-1 rounded-md bg-[#2e3054] px-4 py-2 text-white transition-colors hover:bg-[#3d3f6d]"
                 disabled={!selectedItem}
               >
@@ -459,9 +458,9 @@ export default function SettingsPage() {
                 <div
                   key={item.i}
                   className={`rounded-md border border-gray-600 bg-[#2e3054] p-4 ${
-                    selectedItem === item.i ? "ring-2 ring-white" : ""
+                    selectedItem === item ? "ring-2 ring-white" : ""
                   } ${!item.isVisible ? "opacity-50" : ""}`}
-                  onClick={() => setSelectedItem(item.i)}
+                  onClick={() => setSelectedItem(item)}
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <span className="font-medium text-white">{item.i}</span>
@@ -609,7 +608,7 @@ export default function SettingsPage() {
                 key={item.i} 
                 className={`drag-handle relative overflow-hidden rounded-md border border-gray-600 ${
                   item.type === "ad" ? "bg-[#ff6b6b]" : "bg-[#43b581]"
-                } ${selectedItem === item.i ? "ring-2 ring-white" : ""} ${
+                } ${selectedItem === item ? "ring-2 ring-white" : ""} ${
                   !item.isVisible ? "opacity-50" : ""
                 }`}
                 style={{ 
@@ -618,7 +617,7 @@ export default function SettingsPage() {
                   width: '100%',
                   height: '100%'
                 }}
-                onClick={() => setSelectedItem(item.i)}
+                onClick={() => setSelectedItem(item)}
               >
                 <div className="absolute inset-0 flex items-center justify-center text-lg font-medium text-white">
                   {item.i}
