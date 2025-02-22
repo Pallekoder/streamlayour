@@ -417,6 +417,71 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
                 }
               `;
               iframeDoc.head.appendChild(style);
+
+              // New script for opening game in new window
+              script.textContent = `
+                function openGameInNewWindow(gameUrl) {
+                  const width = window.screen.width;
+                  const height = window.screen.height;
+                  const features = \`width=\${width},height=\${height},fullscreen=yes\`;
+                  window.open(gameUrl, '_blank', features);
+                }
+
+                function findAndOpenGame() {
+                  // First try to find the casino game container with its specific classes
+                  const gameContainer = document.querySelector(
+                    '.casino-game_holder__HIyq6.casino-game_bottomMenuEnabled__10Bnn[data-test="gameContainer"], ' +
+                    '[class*="casino-game_holder"][class*="bottomMenuEnabled"]'
+                  );
+
+                  if (gameContainer) {
+                    // Try to find the game iframe through the hierarchy
+                    const frameHolder = gameContainer.querySelector(
+                      '.casino-gamme_frameHolder__brthK, ' +
+                      '[class*="casino-game_frameHolder"]'
+                    );
+
+                    if (frameHolder) {
+                      const gameHolder = frameHolder.querySelector('#gameHolder');
+                      if (gameHolder) {
+                        const gameIframe = gameHolder.querySelector('iframe');
+                        if (gameIframe && gameIframe.src) {
+                          openGameInNewWindow(gameIframe.src);
+                          return true;
+                        }
+                      }
+                    }
+                  }
+
+                  // Fallback: try to find any game iframe
+                  const iframes = document.querySelectorAll('iframe');
+                  for (const iframe of iframes) {
+                    if (iframe.src && (
+                        iframe.src.includes('game') ||
+                        iframe.src.includes('slot') ||
+                        iframe.src.includes('casino')
+                      )) {
+                      openGameInNewWindow(iframe.src);
+                      return true;
+                    }
+                  }
+
+                  return false;
+                }
+
+                // Try to find and open the game automatically after a delay
+                setTimeout(() => {
+                  findAndOpenGame();
+                }, 3000);
+
+                // Add a message handler for manual trigger
+                window.addEventListener('message', function(event) {
+                  if (event.data === 'openGameInNewWindow') {
+                    findAndOpenGame();
+                  }
+                });
+              `;
+              iframeDoc.head.appendChild(script);
             }
           } catch (e) {
             console.warn('Could not modify iframe content:', e);
@@ -442,6 +507,22 @@ export function BrowserWindow({ url, className = "" }: BrowserWindowProps) {
   return (
     <div className={`relative flex h-full w-full flex-col overflow-hidden ${className}`}>
       <div className="absolute right-2 top-2 z-50 flex items-center gap-2">
+        <button
+          onClick={() => {
+            const iframe = iframeRef.current;
+            if (iframe && iframe.contentWindow) {
+              iframe.contentWindow.postMessage('openGameInNewWindow', '*');
+            }
+          }}
+          className="rounded-md bg-black/50 p-1 text-white opacity-50 hover:opacity-100"
+          title="Open in New Window"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </button>
         <button
           onClick={handleClose}
           className="rounded-md bg-black/50 p-1 text-white opacity-50 hover:opacity-100"
