@@ -26,6 +26,7 @@ export default function LayoutPage() {
   const [viewWindow, setViewWindow] = React.useState<Window | null>(null);
   const [volume, setVolume] = React.useState(100);
   const [webcamDevices, setWebcamDevices] = React.useState<WebcamDevice[]>([]);
+  const [ws, setWs] = React.useState<WebSocket | null>(null);
 
   React.useEffect(() => {
     // Load saved layouts and current layout from localStorage
@@ -62,6 +63,23 @@ export default function LayoutPage() {
     if (existingViewWindow && !existingViewWindow.closed) {
       setViewWindow(existingViewWindow);
     }
+
+    // Connect to WebSocket server
+    const socket = new WebSocket('ws://localhost:8080');
+    
+    socket.onopen = () => {
+      console.log('Connected to WebSocket server');
+      setWs(socket);
+    };
+
+    socket.onclose = () => {
+      console.log('Disconnected from WebSocket server');
+      setWs(null);
+    };
+
+    return () => {
+      socket.close();
+    };
   }, []);
 
   const refreshViewWindow = () => {
@@ -85,6 +103,11 @@ export default function LayoutPage() {
     localStorage.setItem("casinoUrl", casinoUrl);
     localStorage.setItem("webcamUrl", webcamUrl);
     localStorage.setItem("extraScreenUrl", extraScreenUrl);
+    
+    // Send update via WebSocket
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(updatedLayout));
+    }
     
     // Refresh the view to show the new URLs
     refreshViewWindow();
@@ -111,6 +134,12 @@ export default function LayoutPage() {
     localStorage.setItem("currentLayout", JSON.stringify(updatedLayout));
     localStorage.setItem("selectedLayout", layout.id);
     setCurrentLayout(updatedLayout);
+
+    // Send update via WebSocket
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(updatedLayout));
+    }
+
     refreshViewWindow();
   };
 
@@ -123,6 +152,12 @@ export default function LayoutPage() {
     });
     setCurrentLayout(updatedLayout);
     localStorage.setItem("currentLayout", JSON.stringify(updatedLayout));
+
+    // Send update via WebSocket
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(updatedLayout));
+    }
+
     refreshViewWindow();
   };
 

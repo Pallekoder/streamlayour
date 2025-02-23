@@ -1,0 +1,12 @@
+.git
+node_modules
+.next
+.env
+.env.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+electron-view/
+public/Stream.Layout.View.Setup.exe
+dist/ 
